@@ -3,521 +3,295 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>インタラクティブ・データ分析レポート：人事評価データの分析</title>
+    <title>インタラクティブ・アイデア評価シミュレーター</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
-    <!-- Chosen Palette: Warm Neutral with Slate Blue -->
-    <!-- Application Structure Plan: このSPAは、レポートの直線的な流れを「発見の旅」として再構築します。ユーザーはナビゲーションを通じて各分析ステップ（1. 問題提起→2. 第一次解決策→3. 深掘り分析→4. 全体像の把握→5. 結論と応用）を自由に探索できます。各セクションは一つの分析テーマに焦点を当て、インタラクティブな要素（グラフの動的更新、データの切り替え）を通じて、ユーザー自身が操作し、発見する体験を提供します。この物語的な構造は、静的なレポートを読むよりも深い理解と記憶の定着を促すために選択されました。 -->
-    <!-- Visualization & Content Choices: 
-        - [基本統計] Goal:科目ごとの難易度の違いを提示。 Viz:棒グラフ(Chart.js)。 Interaction:静的表示で問題を明確化。Justification:平均点の差を直感的に示すため。
-        - [順位比較] Goal:評価基準による結果の変化を体験。 Viz:HTMLテーブル。 Interaction:トグルスイッチで合計点順位と偏差値順位を切り替え。Justification:評価方法の重要性を具体的に示すため。
-        - [散布図分析] Goal:変数間の関係性を自由に探索。 Viz:散布図(Chart.js)。 Interaction:ドロップダウンでX軸・Y軸の科目を動的に変更。ラベル表示切り替え。Justification:ユーザー主導のデータ探索を可能にするため。
-        - [相関行列] Goal:全変数間の関係性を俯瞰。 Viz:HTMLテーブルによるヒートマップ。 Interaction:ホバーで数値を強調。Justification:相関の全体像を視覚的に素早く把握するため。
-    -->
+    <!-- Chosen Palette: Calm Neutral -->
+    <!-- Application Structure Plan: アプリケーションは、実際の分析プロセスに沿った「①計画 → ②実験 → ③解釈」という3部構成の学習フローを採用します。まず「調査計画」セクションで設計の基本原則を学び、次に中心機能である「インタラクティブ・シミュレーター」でユーザーが「対応なし」「対応あり」の2つのテストを能動的に切り替え、結果（グラフと数値）が動的に変化するのを体験します。最後に「結果の解釈」セクションで学んだ内容を補強します。このタスク指向の構造は、静的なレポートを読むよりもはるかに直感的で、ユーザーが能動的に関与することで学習効果を最大化することを目的としています。 -->
+    <!-- Visualization & Content Choices: レポートの核心である「対応なし・対応あり」のt検定の比較は、インタラクティブなシミュレーターで実現するのが最適と判断しました。Goal: 2つのテスト手法を比較・理解する。Viz/Presentation Method: ユーザーが選択ボタンで操作するChart.jsの棒グラフと、動的に更新される結果表示テキスト。Interaction: ボタンクリックでグラフデータと結論テキストが即座に更新される。Justification: ユーザーが直接操作して結果の変化を見ることで、両者の違いを体験的に学べるため、学習効果が非常に高いです。調査計画の原則（Goal: Inform）は、クリックで詳細が表示されるカード形式（HTML/CSS/JS）を採用し、情報を整理して提示します。(Library: Chart.js) -->
     <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
-        body {
-            font-family: 'Noto Sans JP', sans-serif;
-            background-color: #fdfaf6;
-            color: #333;
-        }
-        .chart-container {
-            position: relative;
-            width: 100%;
-            max-width: 800px;
-            margin-left: auto;
-            margin-right: auto;
-            height: 400px;
-            max-height: 50vh;
-        }
-        @media (max-width: 768px) {
-            .chart-container {
-                height: 300px;
-                max-height: 60vh;
-            }
-        }
-        .nav-link {
-            transition: all 0.3s ease;
-            border-bottom: 2px solid transparent;
-        }
-        .nav-link.active, .nav-link:hover {
-            color: #3b82f6; /* text-blue-500 */
-            border-bottom-color: #3b82f6;
-        }
-        .prose-custom h2 {
-            border-bottom: 2px solid #e5e7eb;
-            padding-bottom: 0.5rem;
-        }
-        .prose-custom p {
-            line-height: 1.8;
-        }
-        .highlight {
-            background-color: #fef3c7; /* amber-100 */
-            font-weight: 500;
-        }
-        .tooltip {
-            position: absolute;
-            background-color: rgba(0, 0, 0, 0.75);
-            color: white;
-            padding: 5px 10px;
-            border-radius: 4px;
-            font-size: 12px;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.2s;
-            z-index: 10;
-        }
-        .heatmap-cell {
-            transition: transform 0.2s ease-in-out;
-        }
-        .heatmap-cell:hover {
-            transform: scale(1.1);
-            box-shadow: 0 0 15px rgba(0,0,0,0.2);
-            z-index: 5;
-            position: relative;
-        }
+        body { font-family: 'Noto Sans JP', sans-serif; background-color: #fdfaf6; }
+        .tab-active { background-color: #3b82f6; color: white; }
+        .tab-inactive { background-color: #e5e7eb; color: #374151; }
+        .chart-container { position: relative; width: 100%; max-width: 600px; margin-left: auto; margin-right: auto; height: 300px; max-height: 40vh; }
+        @media (min-width: 768px) { .chart-container { height: 350px; } }
+        .card { transition: all 0.3s ease-in-out; }
+        .card-content { max-height: 0; overflow: hidden; transition: max-height 0.5s ease-in-out; }
+        .icon-box { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; color: white; }
     </style>
 </head>
-<body class="antialiased">
+<body class="text-gray-800">
 
-    <header class="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-10">
-        <nav class="container mx-auto px-4 py-2 flex justify-between items-center">
-            <h1 class="text-xl md:text-2xl font-bold text-gray-800">人事評価データ分析</h1>
-            <div class="hidden md:flex space-x-6 text-gray-600">
-                <a href="#section1" class="nav-link px-2 py-2">基本統計</a>
-                <a href="#section2" class="nav-link px-2 py-2">順位の逆転</a>
-                <a href="#section3" class="nav-link px-2 py-2">関係性の可視化</a>
-                <a href="#section4" class="nav-link px-2 py-2">結論</a>
-            </div>
-            <div class="md:hidden">
-                <select id="mobile-nav" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
-                    <option value="#section1">基本統計</option>
-                    <option value="#section2">順位の逆転</option>
-                    <option value="#section3">関係性の可視化</option>
-                    <option value="#section4">結論</option>
-                </select>
-            </div>
-        </nav>
-    </header>
+    <div class="container mx-auto p-4 md:p-8">
 
-    <main class="container mx-auto p-4 md:p-8">
-        
-        <section id="section1" class="mb-16 prose-custom max-w-none">
-            <h2 class="text-3xl font-bold mb-4">1. 評価の落とし穴：単純合計の問題点</h2>
-            <p class="mb-6">データに基づき人を評価する際、最も単純な方法は各評価項目の点数を合計することです。しかし、このアプローチには見過ごせない問題が潜んでいます。各項目（この場合はテスト科目）の平均点が異なると、難易度の低い科目で高得点を取ることが有利になり、公平な評価が難しくなります。下のグラフは、5科目の平均点を比較したものです。</p>
-            <div class="bg-white p-4 rounded-lg shadow-lg">
-                <div class="chart-container">
-                    <canvas id="avgScoresChart"></canvas>
+        <header class="text-center mb-10 md:mb-16">
+            <h1 class="text-3xl md:text-4xl font-bold text-blue-600 mb-2">インタラクティブ・アイデア評価シミュレーター</h1>
+            <p class="text-md md:text-lg text-gray-600">データ分析で、あなたのアイデアの価値を証明しよう。</p>
+        </header>
+
+        <main class="space-y-12 md:space-y-20">
+
+            <section id="introduction">
+                <div class="max-w-3xl mx-auto bg-white p-6 rounded-xl shadow-md border border-gray-200">
+                    <h2 class="text-2xl font-bold mb-4 text-center text-gray-700">はじめに：なぜデータ分析が重要か？</h2>
+                    <p class="text-gray-700 leading-relaxed">
+                        面白いアイデアや新規性の高いアイデアほど、「本当にうまくいくの？」という疑問を持たれがちです。そこで強力な武器になるのが「データ分析」です。客観的なデータに基づいてアイデアの良さを具体的に示すことで、説得力が増し、周囲の納得を得やすくなります。このアプリケーションでは、新商品アイデアを評価する際のデータ収集計画から分析、結果の解釈までの一連の流れを、インタラクティブな体験を通して学びます。
+                    </p>
                 </div>
-                 <p class="text-center text-sm text-gray-600 mt-4">国語の平均点が71.3点と最も高く、数学が54.1点と最も低いことがわかります。この難易度の違いを無視して合計点で評価すると、不公平が生じる可能性があります。</p>
-            </div>
-        </section>
-        
-        <section id="section2" class="mb-16 prose-custom max-w-none">
-            <h2 class="text-3xl font-bold mb-4">2. 公平な比較へ：偏差値が示す真の順位</h2>
-            <p class="mb-6">科目ごとの難易度や点数のばらつきの違いを補正し、全科目を同じ土俵で比較するために「偏差値」が有効です。偏差値は、平均点が50、標準偏差が10になるように点数を変換した指標で、個々の得点が集団の中でどの位置にあるかを示します。評価基準を「合計点」から「偏差値の平均」に変えると、生徒の順位はどのように変わるのでしょうか。</p>
+            </section>
             
-            <div class="bg-white p-4 rounded-lg shadow-lg">
-                <div class="flex items-center justify-center mb-4 space-x-4">
-                    <span class="text-gray-700 font-medium">合計点順位</span>
-                    <label for="rankToggle" class="flex items-center cursor-pointer">
-                        <div class="relative">
-                            <input type="checkbox" id="rankToggle" class="sr-only">
-                            <div class="block bg-gray-600 w-14 h-8 rounded-full"></div>
-                            <div class="dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition"></div>
+            <section id="planning">
+                <h2 class="text-2xl font-bold mb-6 text-center text-gray-700">ステップ1：調査を計画する</h2>
+                <div class="max-w-5xl mx-auto text-center mb-6">
+                    <p class="text-gray-600">優れた分析は、優れた計画から始まります。アイデアを正しく評価するためには、「誰に」「どれくらい」「何を」聞くかを慎重に設計する必要があります。以下の3つの重要なポイントを確認しましょう。</p>
+                </div>
+                <div class="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+                    <div class="card bg-white p-6 rounded-xl shadow-md border border-gray-200 cursor-pointer" onclick="toggleCard(this)">
+                        <div class="flex items-center mb-3">
+                            <div class="icon-box bg-blue-500 mr-4">
+                                <span class="text-xl font-bold">1</span>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-800">誰に聞くか？ (母集団)</h3>
                         </div>
-                    </label>
-                     <span class="text-gray-700 font-medium">偏差値順位</span>
+                        <div class="card-content">
+                            <p class="text-gray-600 mt-2 text-left">調査結果を誰に適用したいのかを明確にします。例えば、若者向け商品の評価を高齢者にお願いしても意味がありません。調査対象と、結果を一般化したい対象（母集団）がずれないように、慎重に調査対象者を設定することが重要です。</p>
+                        </div>
+                    </div>
+                    <div class="card bg-white p-6 rounded-xl shadow-md border border-gray-200 cursor-pointer" onclick="toggleCard(this)">
+                        <div class="flex items-center mb-3">
+                            <div class="icon-box bg-green-500 mr-4">
+                                <span class="text-xl font-bold">2</span>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-800">何人に聞くか？ (サンプル数)</h3>
+                        </div>
+                         <div class="card-content">
+                            <p class="text-gray-600 mt-2 text-left">調査する人数（サンプル数）を決定します。データ数が多いほど結果の信頼性は高まりますが、コストや時間も増大します。少なすぎると「たまたま」の結果になる可能性が高まります。このトレードオフを考慮し、適切な人数を決定する必要があります。</p>
+                        </div>
+                    </div>
+                    <div class="card bg-white p-6 rounded-xl shadow-md border border-gray-200 cursor-pointer" onclick="toggleCard(this)">
+                        <div class="flex items-center mb-3">
+                            <div class="icon-box bg-yellow-500 mr-4">
+                                <span class="text-xl font-bold">3</span>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-800">何を聞くか？ (評価基準)</h3>
+                        </div>
+                         <div class="card-content">
+                            <p class="text-gray-600 mt-2 text-left">「新商品案Aはいかがでしたか？」といった漠然とした質問では、人によって評価の尺度がバラバラになってしまいます。「味」「価格」「購入したいか」など、評価基準を具体的にし、比較対象（例：現行商品）を設定することで、客観的で意味のあるデータを収集できます。</p>
+                        </div>
+                    </div>
                 </div>
-                <p id="ranking-intro" class="text-center text-gray-600 mb-4">下の表は<span class="font-bold">合計点</span>に基づいた上位10名です。スイッチを切り替えると、<span class="font-bold">偏差値の平均</span>に基づいた順位と比較できます。</p>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr>
-                                <th class="py-2 px-3 bg-gray-100 font-bold uppercase text-sm text-gray-600 border-b">順位</th>
-                                <th class="py-2 px-3 bg-gray-100 font-bold uppercase text-sm text-gray-600 border-b">ID</th>
-                                <th class="py-2 px-3 bg-gray-100 font-bold uppercase text-sm text-gray-600 border-b">合計点</th>
-                                <th class="py-2 px-3 bg-gray-100 font-bold uppercase text-sm text-gray-600 border-b">偏差値平均</th>
-                            </tr>
-                        </thead>
-                        <tbody id="rankingTable">
-                        </tbody>
-                    </table>
-                </div>
-                <p id="rank-takeaway" class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg text-blue-800 hidden">
-                    <strong class="font-bold">注目ポイント：</strong> ID 10 と ID 48 の学生に注目してください。合計点ではID 10が上位ですが、偏差値の平均ではID 48が上回り、<span class="highlight">順位が逆転</span>しています。これは、評価基準を変えることで個人の評価が大きく変わることを示す好例です。
-                </p>
-            </div>
-        </section>
+            </section>
 
-        <section id="section3" class="mb-16 prose-custom max-w-none">
-            <h2 class="text-3xl font-bold mb-4">3. 関係性の可視化：散布図による探索</h2>
-            <p class="mb-6">評価項目（科目）を「文系」「理系」のようにグループ化することは有効ですが、その分類は本当にデータに基づいているのでしょうか？ 2つの科目の関係性を視覚的に捉えるには「散布図」が最適です。下のインタラクティブな散布図で、異なる科目の組み合わせを選び、その関係性を探ってみましょう。</p>
-            
-            <div class="bg-white p-4 rounded-lg shadow-lg">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 items-end">
+            <section id="simulator">
+                <h2 class="text-2xl font-bold mb-6 text-center text-gray-700">ステップ2：実験シミュレーター</h2>
+                <div class="max-w-5xl mx-auto text-center mb-6">
+                     <p class="text-gray-600">新商品Pと既存商品Qを比較評価します。調査方法には、異なる人がそれぞれの商品を評価する「対応なし」と、同じ人が両商品を評価する「対応あり」の2種類があります。どちらの調査方法を選択するかで、データの構造と分析手法が変わります。下のボタンで切り替えて、結果の違いを体験してみましょう。</p>
+                </div>
+                
+                <div class="flex justify-center mb-6 rounded-lg p-1 bg-gray-200 max-w-sm mx-auto">
+                    <button id="unpairedBtn" class="w-1/2 py-2 px-4 rounded-md text-sm font-medium focus:outline-none transition-colors duration-300 tab-active" onclick="updateAnalysis('unpaired')">対応なしデータ</button>
+                    <button id="pairedBtn" class="w-1/2 py-2 px-4 rounded-md text-sm font-medium focus:outline-none transition-colors duration-300 tab-inactive" onclick="updateAnalysis('paired')">対応ありデータ</button>
+                </div>
+                
+                <div class="max-w-5xl mx-auto bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                    <div class="grid md:grid-cols-2 gap-6 items-center">
+                        <div>
+                            <h3 id="testTypeTitle" class="text-xl font-bold mb-3 text-center"></h3>
+                            <p id="testTypeDescription" class="text-gray-600 mb-4 text-center text-sm min-h-[60px]"></p>
+                            <div id="testTypeVisual" class="flex justify-center items-center space-x-4 p-4 bg-gray-50 rounded-lg"></div>
+                        </div>
+                        
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <h3 class="text-xl font-bold mb-2 text-center">分析結果</h3>
+                            <div class="flex justify-around text-center mb-3">
+                                <div>
+                                    <p class="text-sm text-gray-500">商品P 平均点</p>
+                                    <p id="meanP" class="text-2xl font-bold text-blue-500"></p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-500">商品Q 平均点</p>
+                                    <p id="meanQ" class="text-2xl font-bold text-green-500"></p>
+                                </div>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-sm text-gray-500">p値 (有意確率)</p>
+                                <p id="pValue" class="text-2xl font-bold text-red-500 mb-2"></p>
+                                <div id="conclusion" class="p-2 rounded-md text-sm font-semibold"></div>
+                            </div>
+                        </div>
+                    </div>
+                     <div class="mt-6">
+                        <div class="chart-container">
+                            <canvas id="resultsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="explanation">
+                <h2 class="text-2xl font-bold mb-6 text-center text-gray-700">ステップ3：結果を解釈する</h2>
+                <div class="max-w-3xl mx-auto bg-white p-6 rounded-xl shadow-md border border-gray-200 space-y-4">
                     <div>
-                        <label for="xAxisSelect" class="block mb-2 text-sm font-medium text-gray-900">横軸 (X)</label>
-                        <select id="xAxisSelect" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"></select>
+                        <h3 class="font-bold text-lg">"p値"とは？</h3>
+                        <p class="text-gray-700">p値（有意確率）は、「観測された差が、実際には差がないにもかかわらず、偶然によって生じた確率」を示します。p値が小さいほど、その差が偶然である可能性は低く、統計的に意味のある「有意な差」であると判断できます。</p>
                     </div>
                     <div>
-                        <label for="yAxisSelect" class="block mb-2 text-sm font-medium text-gray-900">縦軸 (Y)</label>
-                        <select id="yAxisSelect" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"></select>
+                        <h3 class="font-bold text-lg">判断基準は？</h3>
+                        <p class="text-gray-700">一般的に、ビジネスや研究の世界では、p値が0.05（5%）未満の場合に「統計的に有意な差がある」と判断します。今回のシミュレーションでは、どちらの調査方法でもp値が0.05を大きく下回ったため、「新商品Pの評価は既存商品Qよりも有意に高い」と結論付けられます。</p>
                     </div>
-                    <div class="flex items-center justify-start md:justify-center">
-                        <label class="flex items-center cursor-pointer">
-                            <input type="checkbox" id="labelToggle" class="form-checkbox h-5 w-5 text-blue-600">
-                            <span class="ml-2 text-gray-700">IDラベルを表示</span>
-                        </label>
+                     <div>
+                        <h3 class="font-bold text-lg">「対応あり」と「対応なし」の使い分け</h3>
+                        <p class="text-gray-700">「対応あり」は、個人の評価の癖などを排除できるため、より少ない人数で精度の高い比較が可能な場合があります。しかし、コーヒーの試飲のように、最初の評価が次の評価に影響を与える（バイアスがかかる）可能性がある場合は、異なる人が評価する「対応なし」が適しています。どちらの調査方法を選択するかは、テーマや状況によって慎重に判断する必要があります。</p>
                     </div>
                 </div>
+            </section>
+        </main>
 
-                <div class="chart-container">
-                    <canvas id="scatterPlot"></canvas>
-                </div>
-
-                <div id="correlation-display" class="mt-4 text-center">
-                    <p class="text-lg">相関係数: <span id="corrCoeff" class="font-bold text-2xl text-blue-600"></span></p>
-                    <p id="corrDescription" class="text-gray-600"></p>
-                </div>
-            </div>
-        </section>
-
-        <section id="section4" class="prose-custom max-w-none">
-            <h2 class="text-3xl font-bold mb-4">4. 結論：データが語る関係性の全体像</h2>
-            <p class="mb-6">個別の散布図で関係性を見た後、全科目間の相関を一覧で確認しましょう。下の「相関行列」は、各科目の組み合わせの相関係数を表したものです。色が濃い（青色）ほど、強い正の相関（一方が高いともう一方も高い傾向）があることを示します。この表から、データに基づいた科目のグループ分けが見えてきます。</p>
-            
-             <div class="bg-white p-4 rounded-lg shadow-lg overflow-x-auto">
-                <div id="correlationMatrix" class="inline-block min-w-full"></div>
-            </div>
-
-            <div class="mt-8 grid md:grid-cols-2 gap-8">
-                <div class="bg-green-50 border border-green-200 p-6 rounded-lg">
-                    <h3 class="text-xl font-bold mb-2 text-green-800">発見：隠れたグルーピング</h3>
-                    <p class="text-green-700">相関行列を見ると、「国語、英語、社会」の文系科目グループと、「数学、理科」の理系科目グループ内で、それぞれ相関が高いことがわかります。これは、経験的な分類がデータによって裏付けられたことを意味します。評価を行う際は、こうしたデータに基づくグルーpingを考慮することが重要です。</p>
-                </div>
-                <div class="bg-red-50 border border-red-200 p-6 rounded-lg">
-                     <h3 class="text-xl font-bold mb-2 text-red-800">重要注意点：相関は因果ではない</h3>
-                    <p class="text-red-700">「ビールの売上」と「アイスの売上」に相関があっても、ビールが原因でアイスが売れるわけではありません。真の原因は「気温の高さ」という共通要因です。同様に、科目間の相関も、直接的な因果関係ではなく、背後にある「論理的思考力」や「言語能力」といった共通の能力を反映している可能性があります。相関関係から因果関係を結論づけるのは早計です。</p>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <footer class="text-center p-4 mt-8 text-gray-500 text-sm">
-        <p>このアプリケーションは、提供されたレポート「第10章 散布図を活用して関係性を分析する」を基に生成されました。</p>
-    </footer>
+        <footer class="text-center mt-12 md:mt-20 pt-6 border-t border-gray-200">
+            <p class="text-gray-500 text-sm">このアプリケーションは、提供されたレポート「第9章平均値の比較をアイデア評価に」を基に作成されました。</p>
+        </footer>
+    </div>
 
     <script>
-        const studentData = [
-            { id: 1, kokugo: 99, eigo: 90, shakai: 72, suugaku: 77, rika: 78 }, { id: 2, kokugo: 87, eigo: 83, shakai: 86, suugaku: 80, rika: 98 },
-            { id: 3, kokugo: 80, eigo: 78, shakai: 72, suugaku: 68, rika: 82 }, { id: 4, kokugo: 78, eigo: 52, shakai: 53, suugaku: 50, rika: 56 },
-            { id: 5, kokugo: 78, eigo: 88, shakai: 80, suugaku: 88, rika: 91 }, { id: 6, kokugo: 74, eigo: 64, shakai: 44, suugaku: 43, rika: 41 },
-            { id: 7, kokugo: 96, eigo: 65, shakai: 81, suugaku: 56, rika: 65 }, { id: 8, kokugo: 78, eigo: 89, shakai: 54, suugaku: 25, rika: 62 },
-            { id: 9, kokugo: 94, eigo: 88, shakai: 84, suugaku: 72, rika: 79 }, { id: 10, kokugo: 76, eigo: 65, shakai: 67, suugaku: 86, rika: 80 },
-            { id: 11, kokugo: 97, eigo: 87, shakai: 51, suugaku: 52, rika: 58 }, { id: 12, kokugo: 67, eigo: 51, shakai: 79, suugaku: 88, rika: 91 },
-            { id: 13, kokugo: 78, eigo: 65, shakai: 57, suugaku: 67, rika: 69 }, { id: 14, kokugo: 44, eigo: 15, shakai: 36, suugaku: 57, rika: 59 },
-            { id: 15, kokugo: 98, eigo: 80, shakai: 67, suugaku: 47, rika: 56 }, { id: 16, kokugo: 88, eigo: 82, shakai: 80, suugaku: 47, rika: 69 },
-            { id: 17, kokugo: 78, eigo: 69, shakai: 67, suugaku: 58, rika: 65 }, { id: 18, kokugo: 78, eigo: 69, shakai: 67, suugaku: 58, rika: 65 },
-            { id: 19, kokugo: 78, eigo: 69, shakai: 67, suugaku: 58, rika: 65 }, { id: 20, kokugo: 43, eigo: 48, shakai: 56, suugaku: 67, rika: 50 },
-            { id: 21, kokugo: 78, eigo: 69, shakai: 67, suugaku: 58, rika: 65 }, { id: 22, kokugo: 58, eigo: 32, shakai: 80, suugaku: 88, rika: 61 },
-            { id: 23, kokugo: 78, eigo: 65, shakai: 34, suugaku: 32, rika: 48 }, { id: 24, kokugo: 98, eigo: 82, shakai: 80, suugaku: 47, rika: 95 },
-            { id: 25, kokugo: 94, eigo: 78, shakai: 78, suugaku: 80, rika: 88 }, { id: 26, kokugo: 78, eigo: 69, shakai: 67, suugaku: 58, rika: 65 },
-            { id: 27, kokugo: 54, eigo: 44, shakai: 32, suugaku: 44, rika: 49 }, { id: 28, kokugo: 52, eigo: 48, shakai: 45, suugaku: 41, rika: 48 },
-            { id: 29, kokugo: 65, eigo: 61, shakai: 59, suugaku: 62, rika: 54 }, { id: 30, kokugo: 78, eigo: 69, shakai: 67, suugaku: 58, rika: 65 },
-            { id: 31, kokugo: 64, eigo: 52, shakai: 51, suugaku: 54, rika: 62 }, { id: 32, kokugo: 48, eigo: 41, shakai: 44, suugaku: 48, rika: 32 },
-            { id: 33, kokugo: 31, eigo: 48, shakai: 32, suugaku: 41, rika: 34 }, { id: 34, kokugo: 80, eigo: 34, shakai: 41, suugaku: 32, rika: 15 },
-            { id: 35, kokugo: 62, eigo: 69, shakai: 15, suugaku: 13, rika: 25 }, { id: 36, kokugo: 88, eigo: 88, shakai: 88, suugaku: 88, rika: 88 },
-            { id: 37, kokugo: 78, eigo: 34, shakai: 41, suugaku: 32, rika: 45 }, { id: 38, kokugo: 90, eigo: 88, shakai: 82, suugaku: 83, rika: 88 },
-            { id: 39, kokugo: 62, eigo: 54, shakai: 48, suugaku: 88, rika: 78 }, { id: 40, kokugo: 78, eigo: 78, shakai: 79, suugaku: 78, rika: 79 },
-            { id: 41, kokugo: 69, eigo: 65, shakai: 62, suugaku: 61, rika: 59 }, { id: 42, kokugo: 78, eigo: 79, shakai: 75, suugaku: 74, rika: 75 },
-            { id: 43, kokugo: 82, eigo: 83, shakai: 84, suugaku: 82, rika: 84 }, { id: 44, kokugo: 78, eigo: 79, shakai: 78, suugaku: 79, rika: 78 },
-            { id: 45, kokugo: 90, eigo: 90, shakai: 88, suugaku: 90, rika: 90 }, { id: 46, kokugo: 78, eigo: 75, shakai: 74, suugaku: 75, rika: 74 },
-            { id: 47, kokugo: 88, eigo: 88, shakai: 88, suugaku: 34, rika: 41 }, { id: 48, kokugo: 87, eigo: 88, shakai: 67, suugaku: 61, rika: 51 },
-            { id: 49, kokugo: 78, eigo: 84, shakai: 11, suugaku: 15, rika: 31 }, { id: 50, kokugo: 80, eigo: 79, shakai: 48, suugaku: 68, rika: 47 }
-        ];
-
-        const subjects = {
-            kokugo: '国語', eigo: '英語', shakai: '社会', suugaku: '数学', rika: '理科'
+        const unpairedData = {
+            productP: { mean: 84, label: '商品P (新製品)' },
+            productQ: { mean: 79.5, label: '商品Q (既存品)' },
+            pValue: 0.01,
+            title: '対応なしデータ (Unpaired t-test)',
+            description: '異なる2つのグループが、それぞれ商品Pと商品Qのいずれか一方のみを評価します。',
+            visual: `
+                <div class="text-center">
+                    <p class="font-semibold text-blue-600">グループA</p>
+                    <span class="text-3xl">👤</span><span class="text-3xl">👤</span>
+                    <p class="text-sm">→ 商品Pを評価</p>
+                </div>
+                <div class="text-center">
+                    <p class="font-semibold text-green-600">グループB</p>
+                    <span class="text-3xl">🧑‍🦰</span><span class="text-3xl">🧑‍🦰</span>
+                    <p class="text-sm">→ 商品Qを評価</p>
+                </div>
+            `
         };
-        const subjectKeys = Object.keys(subjects);
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const stats = calculateStats();
-            processData(stats);
+        const pairedData = {
+            productP: { mean: 84, label: '商品P (新製品)' },
+            productQ: { mean: 79.5, label: '商品Q (既存品)' },
+            pValue: 0.00,
+            title: '対応ありデータ (Paired t-test)',
+            description: '同じグループの全員が、商品Pと商品Qの両方を評価します。',
+            visual: `
+                <div class="text-center">
+                    <p class="font-semibold text-purple-600">全員</p>
+                    <span class="text-3xl">👤</span><span class="text-3xl">🧑‍🦰</span>
+                    <p class="text-sm">→ 商品PとQの両方を評価</p>
+                </div>
+            `
+        };
 
-            renderAvgScoresChart(stats);
-            updateRankingTable('totalScore');
-            setupRankingToggle();
+        let myChart;
 
-            populateSelects();
-            renderScatterPlot('kokugo', 'eigo');
-            setupScatterPlotControls();
-            
-            renderCorrelationMatrix(stats);
-
-            setupSmoothScrolling();
-            setupMobileNav();
-        });
-
-        function calculateStats() {
-            const stats = {};
-            subjectKeys.forEach(key => {
-                const scores = studentData.map(s => s[key]);
-                const sum = scores.reduce((a, b) => a + b, 0);
-                const avg = sum / scores.length;
-                const stdDev = Math.sqrt(scores.map(x => Math.pow(x - avg, 2)).reduce((a, b) => a + b, 0) / scores.length);
-                stats[key] = { avg, stdDev };
-            });
-            return stats;
-        }
-
-        function processData(stats) {
-            studentData.forEach(student => {
-                student.totalScore = subjectKeys.reduce((sum, key) => sum + student[key], 0);
-                
-                let devScoreSum = 0;
-                subjectKeys.forEach(key => {
-                    const deviationScore = ((student[key] - stats[key].avg) / stats[key].stdDev) * 10 + 50;
-                    student[`dev_${key}`] = deviationScore;
-                    devScoreSum += deviationScore;
-                });
-                student.avgDevScore = devScoreSum / subjectKeys.length;
-            });
-        }
-        
-        function renderAvgScoresChart(stats) {
-            const ctx = document.getElementById('avgScoresChart').getContext('2d');
-            new Chart(ctx, {
+        function initChart() {
+            const ctx = document.getElementById('resultsChart').getContext('2d');
+            myChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: subjectKeys.map(key => subjects[key]),
+                    labels: [unpairedData.productP.label, unpairedData.productQ.label],
                     datasets: [{
-                        label: '科目別平均点',
-                        data: subjectKeys.map(key => stats[key].avg.toFixed(1)),
-                        backgroundColor: ['#60a5fa', '#f87171', '#fbbf24', '#4ade80', '#c084fc'],
-                        borderColor: '#ffffff',
-                        borderWidth: 2
+                        label: '平均評価点',
+                        data: [0, 0],
+                        backgroundColor: [
+                            'rgba(59, 130, 246, 0.7)',
+                            'rgba(16, 185, 129, 0.7)',
+                        ],
+                        borderColor: [
+                            'rgba(59, 130, 246, 1)',
+                            'rgba(16, 185, 129, 1)',
+                        ],
+                        borderWidth: 1
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            suggestedMax: 100,
+                            title: {
+                                display: true,
+                                text: '評価点 (100点満点)'
+                            }
+                        }
+                    },
                     plugins: {
-                        legend: { display: false },
-                        title: { display: true, text: '科目別平均点', font: { size: 16 } },
-                         tooltip: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    return `平均点: ${context.parsed.y}点`;
+                                    return `平均点: ${context.raw}`;
                                 }
                             }
                         }
                     },
-                    scales: {
-                        y: { beginAtZero: true, title: { display: true, text: '平均点' } }
+                    animation: {
+                        duration: 800,
+                        easing: 'easeInOutQuart'
                     }
-                }
-            });
-        }
-
-        function updateRankingTable(sortBy) {
-            const sortedData = [...studentData].sort((a, b) => b[sortBy] - a[sortBy]);
-            const tableBody = document.getElementById('rankingTable');
-            tableBody.innerHTML = '';
-            sortedData.slice(0, 10).forEach((student, index) => {
-                const isReversed = (student.id === 10 || student.id === 48);
-                const highlightClass = isReversed && document.getElementById('rankToggle').checked ? 'highlight' : '';
-                const row = `
-                    <tr class="${highlightClass}">
-                        <td class="py-2 px-3 border-b">${index + 1}</td>
-                        <td class="py-2 px-3 border-b">${student.id}</td>
-                        <td class="py-2 px-3 border-b">${student.totalScore.toFixed(0)}</td>
-                        <td class="py-2 px-3 border-b">${student.avgDevScore.toFixed(2)}</td>
-                    </tr>
-                `;
-                tableBody.innerHTML += row;
-            });
-        }
-
-        function setupRankingToggle() {
-            const toggle = document.getElementById('rankToggle');
-            const rankIntro = document.getElementById('ranking-intro');
-            const rankTakeaway = document.getElementById('rank-takeaway');
-
-            toggle.addEventListener('change', () => {
-                const isDeviation = toggle.checked;
-                const dot = toggle.nextElementSibling.nextElementSibling;
-                dot.style.transform = isDeviation ? 'translateX(100%)' : 'translateX(0)';
-
-                updateRankingTable(isDeviation ? 'avgDevScore' : 'totalScore');
-                
-                if(isDeviation){
-                    rankIntro.innerHTML = `下の表は<span class="font-bold">偏差値の平均</span>に基づいた上位10名です。スイッチを切り替えると、<span class="font-bold">合計点</span>に基づいた順位と比較できます。`;
-                    rankTakeaway.classList.remove('hidden');
-                } else {
-                     rankIntro.innerHTML = `下の表は<span class="font-bold">合計点</span>に基づいた上位10名です。スイッチを切り替えると、<span class="font-bold">偏差値の平均</span>に基づいた順位と比較できます。`;
-                    rankTakeaway.classList.add('hidden');
                 }
             });
         }
         
-        let scatterChart;
-        function renderScatterPlot(xKey, yKey) {
-            const data = {
-                datasets: [{
-                    label: `${subjects[yKey]} vs ${subjects[xKey]}`,
-                    data: studentData.map(s => ({ x: s[xKey], y: s[yKey], id: s.id })),
-                    backgroundColor: 'rgba(59, 130, 246, 0.5)',
-                    borderColor: 'rgba(59, 130, 246, 1)',
-                    pointRadius: 5,
-                    pointHoverRadius: 8,
-                }]
-            };
+        function updateAnalysis(type) {
+            const data = (type === 'paired') ? pairedData : unpairedData;
+            const unpairedBtn = document.getElementById('unpairedBtn');
+            const pairedBtn = document.getElementById('pairedBtn');
 
-            const options = {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const id = context.raw.id;
-                                return `ID: ${id}, ${subjects[xKey]}: ${context.parsed.x}, ${subjects[yKey]}: ${context.parsed.y}`;
-                            }
-                        }
-                    },
-                    datalabels: {
-                        display: false,
-                        align: 'top',
-                        formatter: (value, context) => {
-                            return value.id;
-                        },
-                        font: { size: 10, weight: 'bold' },
-                        color: '#333'
-                    }
-                },
-                scales: {
-                    x: { title: { display: true, text: subjects[xKey] } },
-                    y: { title: { display: true, text: subjects[yKey] } }
-                }
-            };
-
-            const ctx = document.getElementById('scatterPlot').getContext('2d');
-            if (scatterChart) {
-                scatterChart.destroy();
+            if (type === 'paired') {
+                pairedBtn.classList.replace('tab-inactive', 'tab-active');
+                unpairedBtn.classList.replace('tab-active', 'tab-inactive');
+            } else {
+                unpairedBtn.classList.replace('tab-inactive', 'tab-active');
+                pairedBtn.classList.replace('tab-active', 'tab-inactive');
             }
-            scatterChart = new Chart(ctx, { type: 'scatter', data: data, options: options, plugins: [ChartDataLabels] });
-            updateCorrelation(xKey, yKey);
-        }
-
-        function populateSelects() {
-            const xAxisSelect = document.getElementById('xAxisSelect');
-            const yAxisSelect = document.getElementById('yAxisSelect');
-            subjectKeys.forEach((key, index) => {
-                const optionX = new Option(subjects[key], key);
-                const optionY = new Option(subjects[key], key);
-                xAxisSelect.add(optionX);
-                yAxisSelect.add(optionY);
-            });
-            xAxisSelect.value = 'kokugo';
-            yAxisSelect.value = 'eigo';
-        }
-        
-        function setupScatterPlotControls() {
-            const xAxisSelect = document.getElementById('xAxisSelect');
-            const yAxisSelect = document.getElementById('yAxisSelect');
-            const labelToggle = document.getElementById('labelToggle');
-
-            xAxisSelect.addEventListener('change', () => renderScatterPlot(xAxisSelect.value, yAxisSelect.value));
-            yAxisSelect.addEventListener('change', () => renderScatterPlot(xAxisSelect.value, yAxisSelect.value));
-
-            labelToggle.addEventListener('change', () => {
-                scatterChart.options.plugins.datalabels.display = labelToggle.checked;
-                scatterChart.update();
-            });
-        }
-        
-        function calculateCorrelation(xKey, yKey) {
-            const n = studentData.length;
-            const xScores = studentData.map(s => s[xKey]);
-            const yScores = studentData.map(s => s[yKey]);
-            const sumX = xScores.reduce((a, b) => a + b, 0);
-            const sumY = yScores.reduce((a, b) => a + b, 0);
-            const sumXY = xScores.map((x, i) => x * yScores[i]).reduce((a, b) => a + b, 0);
-            const sumX2 = xScores.map(x => x * x).reduce((a, b) => a + b, 0);
-            const sumY2 = yScores.map(y => y * y).reduce((a, b) => a + b, 0);
             
-            const numerator = n * sumXY - sumX * sumY;
-            const denominator = Math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY));
-            if (denominator === 0) return 0;
-            return numerator / denominator;
-        }
-        
-        function updateCorrelation(xKey, yKey) {
-            const corr = calculateCorrelation(xKey, yKey);
-            document.getElementById('corrCoeff').textContent = corr.toFixed(3);
+            document.getElementById('testTypeTitle').innerText = data.title;
+            document.getElementById('testTypeDescription').innerText = data.description;
+            document.getElementById('testTypeVisual').innerHTML = data.visual;
+
+            document.getElementById('meanP').innerText = data.productP.mean;
+            document.getElementById('meanQ').innerText = data.productQ.mean;
+            document.getElementById('pValue').innerText = data.pValue.toFixed(2);
             
-            const absCorr = Math.abs(corr);
-            let description = '';
-            if (absCorr >= 0.7) description = '強い相関関係が見られます。';
-            else if (absCorr >= 0.4) description = '相関関係があると言えそうです。';
-            else if (absCorr >= 0.2) description = '弱い相関関係が見られます。';
-            else description = 'ほとんど相関関係は見られません。';
-            document.getElementById('corrDescription').textContent = description;
+            const conclusionEl = document.getElementById('conclusion');
+            if (data.pValue < 0.05) {
+                conclusionEl.innerText = '結論：統計的に有意な差があります';
+                conclusionEl.className = 'p-2 rounded-md text-sm font-semibold bg-green-100 text-green-800';
+            } else {
+                conclusionEl.innerText = '結論：統計的に有意な差はありません';
+                conclusionEl.className = 'p-2 rounded-md text-sm font-semibold bg-yellow-100 text-yellow-800';
+            }
+
+            myChart.data.datasets[0].data = [data.productP.mean, data.productQ.mean];
+            myChart.update();
         }
 
-        function renderCorrelationMatrix() {
-            const matrixDiv = document.getElementById('correlationMatrix');
-            let table = `<table class="w-full border-collapse"><thead><tr><th class="p-2 border bg-gray-100"></th>`;
-            subjectKeys.forEach(key => table += `<th class="p-2 border bg-gray-100 text-sm md:text-base">${subjects[key]}</th>`);
-            table += `</tr></thead><tbody>`;
-
-            subjectKeys.forEach(yKey => {
-                table += `<tr><td class="p-2 border bg-gray-100 font-bold text-sm md:text-base">${subjects[yKey]}</td>`;
-                subjectKeys.forEach(xKey => {
-                    const corr = calculateCorrelation(xKey, yKey);
-                    const absCorr = Math.abs(corr);
-                    let bgColor = 'bg-white';
-                    if (absCorr > 0.1) bgColor = `bg-blue-100`;
-                    if (absCorr > 0.2) bgColor = `bg-blue-200`;
-                    if (absCorr > 0.4) bgColor = `bg-blue-300`;
-                    if (absCorr > 0.6) bgColor = `bg-blue-400 text-white`;
-                    if (absCorr > 0.8) bgColor = `bg-blue-500 text-white`;
-
-                    table += `<td class="p-2 border text-center font-mono text-sm md:text-base ${bgColor} heatmap-cell">${corr.toFixed(3)}</td>`;
-                });
-                table += `</tr>`;
-            });
-            table += `</tbody></table>`;
-            matrixDiv.innerHTML = table;
+        function toggleCard(cardElement) {
+            const content = cardElement.querySelector('.card-content');
+            if (content.style.maxHeight && content.style.maxHeight !== '0px') {
+                content.style.maxHeight = '0px';
+            } else {
+                content.style.maxHeight = content.scrollHeight + 'px';
+            }
         }
 
-        function setupSmoothScrolling() {
-            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-                anchor.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    document.querySelector(this.getAttribute('href')).scrollIntoView({
-                        behavior: 'smooth'
-                    });
-                    document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
-                    this.classList.add('active');
-                });
-            });
-        }
-        
-        function setupMobileNav() {
-            const mobileNav = document.getElementById('mobile-nav');
-            mobileNav.addEventListener('change', function() {
-                const targetId = this.value;
-                document.querySelector(targetId).scrollIntoView({ behavior: 'smooth' });
-            });
-        }
-
+        window.onload = function() {
+            initChart();
+            updateAnalysis('unpaired');
+        };
     </script>
 </body>
 </html>
